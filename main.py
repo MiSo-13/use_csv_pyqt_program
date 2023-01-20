@@ -2,10 +2,14 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 import sys
 
+from ReadCSV.reader import CSV_converter
+
 
 class Main_Window(QtWidgets.QWidget):
     window_width = 640
     window_height = 480
+
+    default_file_path = "C:\\"
 
     def __init__(self):
         super().__init__()
@@ -37,6 +41,9 @@ class Main_Window(QtWidgets.QWidget):
         # 최종적으로 레이아웃 적용
         self.setLayout(vBox)
 
+        # Window drag and drops 활성화
+        self.setAcceptDrops(True)
+
         self.show()
 
     def window_setting(self):
@@ -54,6 +61,50 @@ class Main_Window(QtWidgets.QWidget):
 
         # Window 제목 변경
         self.setWindowTitle("PyQt 업무 자동화 프로그램")
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        files = [u.toLocalFile() for u in event.mimeData().urls()]
+        self.road_file(files[0])
+
+    def road_file(self, path=""):
+        if path == "":
+            read_path, _ = \
+                QtWidgets.QFileDialog.getOpenFileNames(
+                    self,
+                    "csv 파일 선택",
+                    self.default_file_path
+                )
+            if read_path == "":
+                return
+        else:
+            if not path.split("/")[-1].split(".")[-1] == "csv":
+                self.show_error_message("csv 파일이 아닙니다.")
+                return
+
+            converter = CSV_converter(path)
+            converter.convert()
+
+            self.show_info_message("변환이 완료되었습니다.")
+
+    def show_error_message(self, msg):
+        QtWidgets.QMessageBox.warning(
+            self,
+            "경고",
+            msg
+        )
+
+    def show_info_message(self, msg):
+        QtWidgets.QMessageBox.information(
+            self,
+            "알림",
+            msg
+        )
 
 
 def my_exception_hook(exctype, value, traceback):
